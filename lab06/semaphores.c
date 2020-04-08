@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <time.h>
 
-void sem(int semId, int n, int o)
+void sem(int semId, int n, int st)
 {
     struct sembuf op;
-    op.sem_op = o;
+    op.sem_op = st;
     op.sem_flg = 0;
     op.sem_num = n;
     semop(semId, &op, 1);
@@ -33,6 +33,11 @@ void arr_output(int *arr, int n)
         printf("%d ", arr[i]);
     }
     printf("\n");
+}
+
+int getSem(int semId, int n)
+{
+    return semctl(semId, 0, GETVAL, n);
 }
 
 void sort_sem(int semId, int memId, const size_t n)
@@ -97,15 +102,14 @@ int main(int argv, char *argc[])
             printf("%d: ", i);
             for (int j = 0; j < n; ++j)
             {
-                time_t before = time(NULL);
                 sem(semId, j, -1);
-                if (before == time(NULL))
+                if (getSem(semId, j))
                 {
                     printf("%d ", arr[j]);
                 }
                 else
                 {
-                    printf("[%d] ", arr[j]);
+                    printf("!%d ", arr[j]);
                 }
 
                 fflush(stdout);
