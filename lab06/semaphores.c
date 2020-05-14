@@ -53,6 +53,7 @@ void sort_sem(int semId, int memId, const size_t n)
             sem(semId, j, -1);
             if (arr[j] < arr[mInd])
             {
+                sleep(1);
                 mInd = j;
             }
             sem(semId, i, 1);
@@ -102,8 +103,10 @@ int main(int argv, char *argc[])
             printf("%d: ", i);
             for (int j = 0; j < n; ++j)
             {
+                int st = getSem(semId, j);
                 sem(semId, j, -1);
-                if (getSem(semId, j))
+
+                if (st)
                 {
                     printf("%d ", arr[j]);
                 }
@@ -113,7 +116,7 @@ int main(int argv, char *argc[])
                 }
 
                 fflush(stdout);
-                sem(semId, j, -1);
+                sem(semId, j, 1);
             }
             printf("\r\n");
             status = waitpid(childId, NULL, WNOHANG);
