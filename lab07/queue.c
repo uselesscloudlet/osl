@@ -72,6 +72,7 @@ void *mainThd(void *thd_args)
     message.mtype = 1;
     msgsnd(msgId, &message, sizeof(message), 0);
 
+    int permutationCount = 0;
     do
     {
         size_t size = msgrcv(msgId, &message, sizeof(message), 101, 0);
@@ -81,9 +82,11 @@ void *mainThd(void *thd_args)
             {
                 printf("%d ", message.digits[i]);
             }
+            permutationCount++;
             printf("\n");
         }
     } while (message.digits[0] != -1);
+    printf("Permutation count: %d\n", permutationCount);
 
     msgctl(msgId, IPC_RMID, NULL);
     return NULL;
