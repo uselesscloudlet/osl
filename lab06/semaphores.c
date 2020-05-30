@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <time.h>
 
-void sem(int semId, int n, int st)
+void sem(int semId, int n, int state)
 {
     struct sembuf op;
-    op.sem_op = st;
+    op.sem_op = state;
     op.sem_flg = 0;
     op.sem_num = n;
     semop(semId, &op, 1);
@@ -35,15 +35,8 @@ void arr_output(int *arr, int n)
     printf("\n");
 }
 
-int getSem(int semId, int n)
+void sort_sem(int* arr, int semId, int memId, const size_t n)
 {
-    return semctl(semId, 0, GETVAL, n);
-}
-
-void sort_sem(int semId, int memId, const size_t n)
-{
-    int *arr = (int*)shmat(memId, 0, 0);
-
     for (int i = 0; i < n; ++i)
     {
         int mInd = i;
@@ -53,7 +46,6 @@ void sort_sem(int semId, int memId, const size_t n)
             sem(semId, j, -1);
             if (arr[j] < arr[mInd])
             {
-                sleep(1);
                 mInd = j;
             }
             sem(semId, i, 1);
@@ -66,10 +58,12 @@ void sort_sem(int semId, int memId, const size_t n)
             int temp = arr[i];
             arr[i] = arr[mInd];
             arr[mInd] = temp;
+            sleep(1);
             sem(semId, i, 1);
             sem(semId, mInd, 1);
         }
     }
+    exit(0);
 }
 
 int main(int argv, char *argc[])
@@ -78,8 +72,8 @@ int main(int argv, char *argc[])
     int mind = atoi(argc[2]);
     int maxd = atoi(argc[3]);
 
-    int memId = shmget(IPC_PRIVATE, sizeof(int) * n, 0600|IPC_CREAT|IPC_EXCL);
-    int semId = shmget(IPC_PRIVATE, n, 0600 | IPC_CREAT);
+    int memId = shmget(IPC_PRIVATE, sizeof(int) * n, 0600 | IPC_CREAT | IPC_EXCL);
+    int semId = semget(IPC_PRIVATE, n, 0600 | IPC_CREAT);
     int* arr = (int*)shmat(memId, 0, 0);
     rand_fill(arr, n, mind, maxd);
     printf("source: \r\n");
@@ -92,7 +86,7 @@ int main(int argv, char *argc[])
     int childId = fork();
     if (childId == 0)
     {
-        sort_sem(semId, memId, n);
+        sort_sem(arr, semId, memId, n);
     }
     else
     {
@@ -103,24 +97,14 @@ int main(int argv, char *argc[])
             printf("%d: ", i);
             for (int j = 0; j < n; ++j)
             {
-                int st = getSem(semId, j);
                 sem(semId, j, -1);
-
-                if (st)
-                {
-                    printf("%d ", arr[j]);
-                }
-                else
-                {
-                    printf("!%d ", arr[j]);
-                }
-
+                printf("%d ", arr[j]);
                 fflush(stdout);
                 sem(semId, j, 1);
             }
-            printf("\r\n");
+            printf("\r\n");;
             status = waitpid(childId, NULL, WNOHANG);
-            ++i;
+            i++;
         } while(!status);
 
         printf("\nresult: \r\n");
