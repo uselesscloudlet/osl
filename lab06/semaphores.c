@@ -58,7 +58,6 @@ void sort_sem(int* arr, int semId, int memId, const size_t n)
             int temp = arr[i];
             arr[i] = arr[mInd];
             arr[mInd] = temp;
-            sleep(1);
             sem(semId, i, 1);
             sem(semId, mInd, 1);
         }
